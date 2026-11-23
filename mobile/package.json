@@ -1,0 +1,19 @@
+{
+  "name": "overpopped-mobile",
+  "private": true,
+  "version": "1.0.0",
+  "description": "iOS (and later Android) wrapper around the web game. The game itself lives in ../src and is not changed for mobile.",
+  "scripts": {
+    "web": "cd .. && VITE_TRACE_URL= npx vite build --outDir mobile/www --emptyOutDir",
+    "sync": "npm run web && npx cap sync ios",
+    "open": "npx cap open ios",
+    "testflight": "./testflight.sh"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

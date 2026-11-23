@@ -231,7 +231,7 @@ function beginSession(m: StartMsg) {
   session = new RollbackSession(levels, me, newGame(levels, m.seats.length, m.level, m.seed, m.gm), (to, msg) => room.send(m.seats[to], { ...msg, gid: m.gid }));
   session.hl = new Highlights();
   sessionT0 = performance.now();
-  gameSecs = 0;
+  noteGameStart();
   gameStarted(true);
   acc = 0;
   pausePulse = false;
@@ -499,6 +499,16 @@ const PLAYER_ID = (() => {
 })();
 /** Seconds of play in the current game (not paused, not on the end screen). */
 let gameSecs = 0;
+/** Show the touch controls over the first level of this game: set when it's this browser's first game in two weeks (or ever). */
+let teach = false;
+function noteGameStart() {
+  gameSecs = 0;
+  try {
+    const last = +(localStorage.getItem('splitstorm.lastplay') ?? 0);
+    teach = Date.now() - last > 14 * 86400e3;
+    localStorage.setItem('splitstorm.lastplay', String(Date.now()));
+  } catch { teach = false; }
+}
 
 /** The keys held through a local game, so it can be replayed exactly later: per player, [step, bits] at each change. */
 let rec: { id: string; seed: number; start: number; n: number; inp: number[][]; last: number[] } | null = null;
@@ -651,7 +661,7 @@ function startLocal(level: number) {
   hl = new Highlights();
   musicShift = seed % 97;
   rec = { id: newId(), seed, start: level, n: 0, inp: Array.from({ length: n }, () => []), last: new Array<number>(n).fill(0) };
-  gameSecs = 0;
+  noteGameStart();
   gameStarted(false);
   acc = 0;
   pausePulse = false;
@@ -954,7 +964,7 @@ function tapUI(x: number, y: number): boolean {
   }
   const s = session ? session.predicted : game;
   if (s && (s.phase === 'over' || s.phase === 'won')) { gameKey('Enter'); return true; }
-  if (s && s.paused) { gameKey(x < VIEW_W * 0.36 ? 'Enter' : x < VIEW_W * 0.64 ? 'KeyS' : 'KeyQ'); return true; }
+  if (s && s.paused) { gameKey(close ? 'Enter' : x < VIEW_W * 0.36 ? 'Enter' : x < VIEW_W * 0.64 ? 'KeyS' : 'KeyQ'); return true; }
   if (close) { gameKey('Escape'); return true; }
   return false;
 }
@@ -1101,7 +1111,7 @@ function frame(now: number) {
     const waiting = session.stalled && session.silence > 20;
     const status = session.desync ? 'OUT OF SYNC - restart the game' : `online  ${session.frame - session.confirmedFrame}f`;
     const pings = session.ping.filter((_, i) => i !== net.me).map((p) => (p < 0 ? '...' : String(Math.round(p))));
-    drawGame(ctx, s, levelAt(s, levels), where(s), dt, waiting, { you: net.me, status }, [...nowPlaying(), `ping ${pings.join(' / ')} ms`]);
+    drawGame(ctx, s, levelAt(s, levels), where(s), dt, waiting, { you: net.me, status }, [...nowPlaying(), `ping ${pings.join(' / ')} ms`], teach && !s.hist.length);
     if (session.silence > 600) { if (net.role === 'host') endSession(); else fail('Connection lost.'); }
   } else if (screen === 'game' && game) {
     acc += dt;
@@ -1124,7 +1134,7 @@ function frame(now: number) {
     }
     if (!game.paused && game.phase !== 'over' && game.phase !== 'won') { addPlayTime(dt); gameSecs += dt; }
     if (!practice && levels === TOWER) reached(game);
-    drawGame(ctx, game, levelAt(game, levels), where(game), game.paused ? 0 : dt, false, undefined, nowPlaying());
+    drawGame(ctx, game, levelAt(game, levels), where(game), game.paused ? 0 : dt, false, undefined, nowPlaying(), teach && !game.hist.length);
   } else if (screen === 'lobby') {
     menu.t += dt;
     const host = net.role === 'host';

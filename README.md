@@ -117,6 +117,7 @@ server never uploads.
 ```bash
 npm run fetch-traces       # download new logs into traces/ and level stats into stats/levels/
 npm run report             # build report/index.html (add -- --sweep to compare netcode settings)
+npm run report:serve       # serve it at http://localhost:5299 with a Regenerate button (fetch + rebuild)
 npm run replay             # replay every logged session through today's netcode, in the terminal
 npm run solo               # replay the recorded one-computer games and check they reproduce
 npm run replay -- --sweep  # same, trying alternative netcode settings
@@ -218,6 +219,7 @@ secret read key.
 | `src/rollback.ts` | Netcode. |
 | `src/net.ts` | Rooms and peer-to-peer links. |
 | `src/main.ts` | Menus, lobby, input, game loop, uploads. |
+| `mobile/` | iOS app: a Capacitor wrapper around the built game, with its own README. Doesn't change the game. |
 | `src/settings.ts` | Volume and key bindings. |
 | `src/music.ts` | Chiptune music: tracks as data and the player. `music.html` on the dev server auditions them. |
 | `src/stats.ts` | Lifetime stats. |

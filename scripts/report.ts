@@ -212,9 +212,27 @@ tr.total td { font-weight: 600; background: color-mix(in srgb, var(--accent) 8%,
 .bar i { display: block; height: 100%; background: var(--accent); }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 16px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.regen { float: right; margin-top: -30px; } .regen button { font: inherit; font-weight: 600; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--bg); cursor: pointer; } .regen button:disabled { opacity: .5; cursor: wait; }
 .card b { display: block; font-size: 22px; } .card span { color: var(--muted); font-size: 12px; }
 </style></head><body><main>
 <h1>Overpopped report</h1>
+<div class="regen"><button id="regen">Regenerate</button> <span id="regen-msg" class="muted"></span></div>
+<script>
+document.getElementById('regen').onclick = async (e) => {
+  const btn = e.target, msg = document.getElementById('regen-msg');
+  btn.disabled = true; msg.textContent = 'Downloading new logs and rebuilding...';
+  try {
+    const r = await fetch('/regen', { method: 'POST' });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).log || r.status);
+    location.reload();
+  } catch (err) {
+    btn.disabled = false;
+    msg.textContent = location.protocol === 'file:'
+      ? 'Opened as a file: run npm run report:serve and open http://localhost:5299 to use this button (or run npm run fetch-traces && npm run report).'
+      : 'Failed: ' + String(err.message || err).slice(-300);
+  }
+};
+</script>
 <div class="sub">Generated ${esc(new Date().toISOString().slice(0, 16).replace('T', ' '))} UTC from ${results.length} recorded online sessions and ${recs.length} games of level stats.</div>
 <div class="cards">
   <div class="card"><b>${results.length}</b><span>online sessions (${mins(allSecs)} min)</span></div>

@@ -60,6 +60,8 @@ export interface Level {
   /** Tower floor (1-based). Reaching a new floor refills everyone's lives. */
   floor?: number;
   hint?: string;
+  /** The hint on a touch screen, where it differs. */
+  touchHint?: string;
   time: number; // seconds
   balls: BallDef[];
   rects?: RectDef[];

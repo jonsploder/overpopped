@@ -1,0 +1,11 @@
+{
+  "appId": "com.jonsploder.overpopped",
+  "appName": "Overpopped",
+  "webDir": "www",
+  "backgroundColor": "#07080f",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "backgroundColor": "#07080f"
+  }
+}

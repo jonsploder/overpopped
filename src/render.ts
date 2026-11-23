@@ -38,17 +38,50 @@ export function setTouch(v: boolean) { touch = v; }
 /** Top-right close/back button (touch only), in view coordinates. */
 export const CLOSE_BTN = { x: W - 56, y: 8, w: 48, h: 48 };
 
-function closeButton(ctx: CanvasRenderingContext2D) {
+function closeButton(ctx: CanvasRenderingContext2D, icon: 'x' | 'pause' | 'play' = 'x') {
   if (!touch) return;
   const b = CLOSE_BTN;
   ctx.fillStyle = 'rgba(255,255,255,0.08)';
   ctx.beginPath(); ctx.roundRect(b.x, b.y, b.w, b.h, 10); ctx.fill();
   ctx.strokeStyle = 'rgba(255,255,255,0.55)';
   ctx.lineWidth = 3;
+  if (icon !== 'x') {
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    if (icon === 'pause') { ctx.fillRect(b.x + 16, b.y + 15, 5, 18); ctx.fillRect(b.x + 27, b.y + 15, 5, 18); }
+    else { ctx.beginPath(); ctx.moveTo(b.x + 18, b.y + 14); ctx.lineTo(b.x + 34, b.y + 24); ctx.lineTo(b.x + 18, b.y + 34); ctx.fill(); }
+    return;
+  }
   ctx.beginPath();
   ctx.moveTo(b.x + 16, b.y + 16); ctx.lineTo(b.x + 32, b.y + 32);
   ctx.moveTo(b.x + 32, b.y + 16); ctx.lineTo(b.x + 16, b.y + 32);
   ctx.stroke();
+}
+
+/** Touch controls, shown over the two halves of the screen: slide on the left to move, hold on the right to fire. */
+function drawTouchGuide(ctx: CanvasRenderingContext2D, alpha: number) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ([[W * 0.25, 'SLIDE TO MOVE'], [W * 0.75, 'HOLD TO FIRE']] as const).forEach(([x, label], i) => {
+    ctx.fillStyle = 'rgba(255,255,255,0.07)';
+    ctx.beginPath(); ctx.roundRect(x - 170, 300, 340, 110, 16); ctx.fill();
+    ctx.strokeStyle = ctx.fillStyle = '#cfd4ff';
+    ctx.lineWidth = 3;
+    const y = 338;
+    if (i === 0) {
+      // a thumb with an arrow either side
+      ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke();
+      for (const d of [-1, 1]) {
+        ctx.beginPath(); ctx.moveTo(x + d * 24, y); ctx.lineTo(x + d * 58, y); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + d * 68, y); ctx.lineTo(x + d * 54, y - 9); ctx.lineTo(x + d * 54, y + 9); ctx.fill();
+      }
+    } else {
+      // a thumb pressed down, and a harpoon going up
+      ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x, y, 21, 0, Math.PI * 2); ctx.stroke();
+    }
+    text(ctx, label, x, 388, 18, '#cfd4ff');
+  });
+  ctx.restore();
 }
 
 export function drawRotate(ctx: CanvasRenderingContext2D) {
@@ -101,7 +134,7 @@ function background(ctx: CanvasRenderingContext2D) {
   ctx.stroke();
 }
 
-export function drawGame(ctx: CanvasRenderingContext2D, s: State, L: Level, where: string, dt: number, waiting = false, net?: { you: number; status: string }, corner: string[] = []) {
+export function drawGame(ctx: CanvasRenderingContext2D, s: State, L: Level, where: string, dt: number, waiting = false, net?: { you: number; status: string }, corner: string[] = [], teach = false) {
   ctx.save();
   if (shake > 0) {
     shake -= dt;
@@ -481,7 +514,6 @@ export function drawGame(ctx: CanvasRenderingContext2D, s: State, L: Level, wher
     }
     if (s.mode !== 'versus' && L.floor && / 1\//.test(where)) text(ctx, `FLOOR ${L.floor}`, W / 2, 140, 18, '#ffd43b');
     text(ctx, L.name, W / 2, 190, 40);
-    if (touch) text(ctx, 'Left thumb: slide to move      Right thumb: hold to fire', W / 2, 320, 15, '#8a90c7', 'center', 400);
   } else if (s.phase === 'clear' && L.floor && s.phaseT <= FLOOR_UP_TICKS && isFloorEnd(L)) drawFloorUp(ctx, s, L.floor - 1);
   else if (s.phase === 'clear') text(ctx, 'CLEAR!', W / 2, 200, 48, '#8ce99a');
   else if (s.phase === 'over') overlay(ctx, 'GAME OVER', '#ff6b6b', `Score ${s.score}`);
@@ -491,7 +523,7 @@ export function drawGame(ctx: CanvasRenderingContext2D, s: State, L: Level, wher
     ctx.fillStyle = 'rgba(7,8,15,0.88)';
     ctx.fillRect(0, 0, W, H);
     text(ctx, 'PAUSED', W / 2, 70, 40, '#fff');
-    text(ctx, net ? 'Paused for everyone' : L.hint ?? '', W / 2, 106, 14, '#8a90c7', 'center', 400);
+    text(ctx, net ? 'Paused for everyone' : (touch && L.touchHint) || (L.hint ?? ''), W / 2, 106, 14, '#8a90c7', 'center', 400);
     // the rules of the mode being played (classic needs none)
     const m = MODES.find((x) => x.id === s.mode);
     if (m && m.id !== 'classic') {
@@ -520,8 +552,10 @@ export function drawGame(ctx: CanvasRenderingContext2D, s: State, L: Level, wher
       text(ctx, 'QUIT', W * 0.8, 418, 26, '#ff8787');
     } else text(ctx, `Enter: resume      S: settings      Q: ${quit}`, W / 2, 418, 16, '#cfd4ff', 'center', 400);
   }
+  // touch, first game in a while: the controls, until a few seconds into the first level
+  if (touch && teach && !s.paused && (s.phase === 'ready' || (s.phase === 'play' && s.lt < 360))) drawTouchGuide(ctx, s.phase === 'ready' ? 1 : Math.min(1, (360 - s.lt) / 60));
   if (waiting) overlay(ctx, 'WAITING', '#fff', touch ? 'for the other player...' : 'for the other player...   Esc: lobby');
-  closeButton(ctx);
+  closeButton(ctx, waiting || s.phase === 'over' || s.phase === 'won' ? 'x' : s.paused ? 'play' : 'pause');
 }
 
 /** Round pickup token with a drawn icon. `r` is the token radius. */

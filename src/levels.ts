@@ -8,6 +8,7 @@ export const CAMPAIGN: Level[] = [
   {
     name: 'Warm-Up',
     hint: 'Move with the arrows, fire with Space.',
+    touchHint: 'Slide your left thumb to move, hold your right to fire.',
     time: 30,
     start: [400, 320],
     balls: [{ x: 690, y: 250, size: 2, dir: -1 }],
