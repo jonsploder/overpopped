@@ -318,7 +318,7 @@ export function drawGame(ctx: CanvasRenderingContext2D, s: State, L: Level, wher
         ctx.lineWidth = 4;
         ctx.beginPath(); ctx.arc(p.x, H - PH / 2, 26, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * p.rp) / REVIVE_NEED); ctx.stroke();
       }
-      text(ctx, `${Math.ceil(p.rt / p.rr / 60)}`, p.x, H - PH - 44, 14, '#fff');
+      text(ctx, `${Math.ceil(p.rt / 60)}`, p.x, H - PH - 44, 14, '#fff');
       ctx.restore();
     });
   }

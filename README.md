@@ -31,7 +31,7 @@ Picked on the menu, or by the host in an online lobby.
 | Versus | Each player gets their own lane (the level set is ignored; rounds are generated). When you pop a ball, its first piece stays and the rest drop into random rivals' lanes. Clear your lane first, or be the last one standing, to win the round. First to 3 rounds wins. |
 | Tethered | Players are roped to their neighbours and can't get more than 170 px apart. In every roped mode a **rope master** pickup can drop: its holder drags neighbours along instead of being held back. |
 | Two Heads | Players pair up in one body: one moves, the other shoots, and they swap every level. An odd player out plays alone. |
-| Revive | The team shares 3 lives. A hit player waits in a small circle for 15 seconds, and longer early in a level: the first fall of an attempt at a level waits 60 s, the second 30 s, every one after that 15 s; a teammate standing in it for 1.5 s brings them back. If time runs out, the whole team goes down and loses a life. Every player must be up for a level to count as cleared. |
+| Revive | The team shares 3 lives. A hit player waits in a small circle for 15 seconds; a teammate standing in it brings them back. That takes 1.5 s on the first fall of an attempt at a level and twice as long with each fall after it (3 s, 6 s, then 12 s from the fourth on). If time runs out, the whole team goes down and loses a life. Every player must be up for a level to count as cleared. |
 
 Except in Revive, each player has their own 3 lives. A hit sits you out until the level is cleared or
 restarts; the level restarts once everyone is down. Single-player games are always Classic.

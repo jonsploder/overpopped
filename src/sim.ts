@@ -117,8 +117,8 @@ export const MODES: { id: Mode; name: string; hint: string }[] = [
 ];
 /** Revive mode: how long a fallen player waits, the size of their circle, and how long reviving takes. */
 export const REVIVE_TICKS = 15 * 60;
-/** How fast a fallen player's revive timer runs: the first fall of a level drains at 1/4 speed, the second at 1/2, then full speed. */
-export const REVIVE_RATES = [0.25, 0.5, 1];
+/** How fast the revive ring fills: full speed on the first fall of a level, then half as fast with each fall after it. */
+export const REVIVE_RATES = [1, 0.5, 0.25, 0.125];
 export const REVIVE_R = 34;
 export const REVIVE_NEED = 90;
 /** Roped modes: longest the rope between neighbouring players can stretch. */
@@ -161,7 +161,7 @@ export interface Player { x: number; face: number; weapon: Weapon; cd: number; s
   down: boolean;
   /** Haste curse: ticks left. */
   haste: number;
-  /** Revive mode, while down: ticks left to be revived, revive progress, and how fast the timer drains (REVIVE_RATES). */
+  /** Revive mode, while down: ticks left to be revived, revive progress, and how fast that progress fills (REVIVE_RATES). */
   rt: number;
   rp: number;
   rr: number;
@@ -203,7 +203,7 @@ export interface State {
   lost: number;
   /** Revive mode: the team's shared lives. */
   team: number;
-  /** Revive mode: falls so far on this attempt at the level (sets how fast the next revive timer drains). */
+  /** Revive mode: falls so far on this attempt at the level (sets how slowly the next revive fills). */
   falls: number;
 }
 
@@ -790,12 +790,12 @@ export function step(s: State, inputs: number[], levels: Level[], ev: GameEvent[
     for (const p of s.players) {
       if (!p.down || p.rt <= 0) continue;
       const helper = s.players.find((q) => !q.down && Math.abs(q.x - p.x) < REVIVE_R);
-      if (helper) p.rp++; else if (p.rp > 0) p.rp--;
+      if (helper) p.rp += p.rr; else p.rp = Math.max(0, p.rp - 1);
       if (p.rp >= REVIVE_NEED) {
         p.down = false; p.rt = 0; p.rp = 0; p.invuln = 120;
         if (helper) helper.st.revives++;
         ev.push({ t: 'revive', x: p.x });
-      } else if ((p.rt -= p.rr) <= 0) {
+      } else if (--p.rt <= 0) {
         for (const q of s.players) if (!q.down) fell(q); // out of time: the whole team goes down
       }
     }
